@@ -42,6 +42,13 @@ export default function QueryData({
         onlyLegacy: userSettings.legacyFilter,
         onlyLinkGlobal: userSettings.linkGlobalAndAdvanced,
         onlyAreas,
+        id:
+          category === params.generalCategory &&
+          (category === 'nests'
+            ? !filters.pokemon && !filters.polygons
+            : !filters.enabled)
+            ? params.id
+            : undefined,
       }
       Object.entries(requestedFilters).forEach((topLevelFilter) => {
         const [id, specifics] = topLevelFilter
@@ -92,7 +99,13 @@ export default function QueryData({
   }, [filters, userSettings, onlyAreas])
 
   const { data, previousData, refetch, error } = useQuery(
-    Query[category](filters, perms, map.getZoom(), clusteringRules.zoomLevel),
+    Query[category](
+      filters,
+      perms,
+      map.getZoom(),
+      clusteringRules.zoomLevel,
+      params,
+    ),
     {
       context: { timeout: (config.polling[category] || 10) * 1000 },
       variables: {

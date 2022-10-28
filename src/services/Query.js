@@ -20,7 +20,7 @@ export default class Query {
     return getAllDevices
   }
 
-  static gyms(filters, perms) {
+  static gyms(filters, perms, _zoom, _clusterZoom, params) {
     if (filters === 'id') {
       return gymIndex.getOne
     }
@@ -29,9 +29,9 @@ export default class Query {
     }
     const permObj = {
       Gyms: filters.raids
-        ? filters.allGyms || perms.allGyms
-        : filters.allGyms && perms.allGyms,
-      Raids: filters.raids && perms.raids,
+        ? filters.allGyms || params.category === 'gyms' || perms.allGyms
+        : (filters.allGyms || params.category === 'gyms') && perms.allGyms,
+      Raids: (filters.raids || params.category === 'raids') && perms.raids,
     }
     let query = 'get'
     Object.keys(permObj).forEach((keyPerm) => {
@@ -57,14 +57,16 @@ export default class Query {
     return getAllNests
   }
 
-  static pokestops(filters, perms) {
+  static pokestops(filters, perms, _zoom, _clusterZoom, params) {
     if (filters === 'id') {
       return pokestopIndex.getOne
     }
     const permObj = {
-      Lures: filters.lures && perms.lures,
-      Quests: filters.quests && perms.quests,
-      Invasions: filters.invasions && perms.invasions,
+      Lures: (filters.lures || params.category === 'lures') && perms.lures,
+      Quests: (filters.quests || params.category === 'quests') && perms.quests,
+      Invasions:
+        (filters.invasions || params.category === 'invasions') &&
+        perms.invasions,
     }
     let query = 'get'
 

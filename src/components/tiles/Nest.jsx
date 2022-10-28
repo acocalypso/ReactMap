@@ -20,7 +20,7 @@ const NestTile = ({ item, filters, Icons, ts, params, setParams }) => {
 
   return (
     <>
-      {filters.pokemon && (
+      {(filters.pokemon || params.id === item.id) && (
         <Marker
           ref={(m) => {
             markerRef.current[item.id] = m
@@ -49,7 +49,7 @@ const NestTile = ({ item, filters, Icons, ts, params, setParams }) => {
         </Marker>
       )}
       {parsedJson &&
-        filters.polygons &&
+        (filters.polygons || params.id === item.id) &&
         parsedJson.map((polygon) => (
           <Polygon positions={polygon} key={polygon} />
         ))}

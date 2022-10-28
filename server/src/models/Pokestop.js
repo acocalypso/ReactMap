@@ -71,6 +71,7 @@ module.exports = class Pokestop extends Model {
         onlyArEligible,
         onlyAllPokestops,
         onlyAreas = [],
+        id: webhookId,
       },
       ts,
       midnight: clientMidnight,
@@ -153,10 +154,13 @@ module.exports = class Pokestop extends Model {
       .whereBetween(isMad ? 'latitude' : 'lat', [args.minLat, args.maxLat])
       .andWhereBetween(isMad ? 'longitude' : 'lon', [args.minLon, args.maxLon])
       .andWhere(isMad ? 'enabled' : 'deleted', isMad)
+
     if (!getAreaSql(query, areaRestrictions, onlyAreas, isMad)) {
       return []
     }
-
+    if (webhookId) {
+      query.orWhere(isMad ? 'pokestop_id' : 'pokestop.id', webhookId)
+    }
     if (!onlyAllPokestops) {
       // Skips ugly query if all pokestops are selected anyway
       const xp = []
@@ -532,6 +536,7 @@ module.exports = class Pokestop extends Model {
       safeTs,
       midnight,
       perms,
+      webhookId,
     )
   }
 
@@ -547,6 +552,7 @@ module.exports = class Pokestop extends Model {
     safeTs,
     midnight,
     perms,
+    webhookId,
   ) {
     const filteredResults = []
     for (let i = 0; i < queryResults.length; i += 1) {
@@ -574,7 +580,7 @@ module.exports = class Pokestop extends Model {
       }
       if (
         perms.invasions &&
-        (filters.onlyAllPokestops || filters.onlyInvasions)
+        (filters.onlyAllPokestops || filters.onlyInvasions || webhookId)
       ) {
         filtered.invasions = filters.onlyAllPokestops
           ? pokestop.invasions
@@ -584,7 +590,8 @@ module.exports = class Pokestop extends Model {
       }
       if (
         perms.lures &&
-        (filters.onlyAllPokestops ||
+        (webhookId ||
+          filters.onlyAllPokestops ||
           (filters.onlyLures &&
             pokestop.lure_expire_timestamp >= safeTs &&
             filters[`l${pokestop.lure_id}`]))
@@ -595,7 +602,10 @@ module.exports = class Pokestop extends Model {
         ])
       }
 
-      if (perms.quests && (filters.onlyAllPokestops || filters.onlyQuests)) {
+      if (
+        perms.quests &&
+        (webhookId || filters.onlyAllPokestops || filters.onlyQuests)
+      ) {
         filtered.quests = []
         pokestop.quests.forEach((quest) => {
           if (
@@ -663,7 +673,8 @@ module.exports = class Pokestop extends Model {
             }
             if (
               quest.quest_timestamp >= midnight &&
-              (filters.onlyAllPokestops ||
+              (webhookId ||
+                filters.onlyAllPokestops ||
                 (filters[newQuest.key] &&
                   (filters[newQuest.key].adv
                     ? quest.quest_title === filters[newQuest.key].adv
@@ -681,7 +692,8 @@ module.exports = class Pokestop extends Model {
         filters.onlyAllPokestops ||
         filtered.quests?.length ||
         filtered.invasions?.length ||
-        filtered.lure_id
+        filtered.lure_id ||
+        webhookId
       ) {
         filteredResults.push(filtered)
       }

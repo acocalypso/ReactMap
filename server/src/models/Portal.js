@@ -12,7 +12,7 @@ module.exports = class Portal extends Model {
   static async getAll(perms, args) {
     const { areaRestrictions } = perms
     const {
-      filters: { onlyAreas = [] },
+      filters: { onlyAreas = [], id: webhookId },
       minLat,
       minLon,
       maxLat,
@@ -26,6 +26,9 @@ module.exports = class Portal extends Model {
         '>',
         Date.now() / 1000 - portalUpdateLimit * 60 * 60 * 24,
       )
+    if (webhookId) {
+      query.where('id', webhookId)
+    }
     if (!getAreaSql(query, areaRestrictions, onlyAreas)) {
       return []
     }

@@ -72,6 +72,7 @@ module.exports = class Gym extends Model {
       onlyBadge,
       ts,
       onlyAreas = [],
+      id: webhookId,
     } = args.filters
     const safeTs = ts || Math.floor(new Date().getTime() / 1000)
     const query = this.query()
@@ -121,6 +122,9 @@ module.exports = class Gym extends Model {
       .andWhereBetween(isMad ? 'longitude' : 'lon', [args.minLon, args.maxLon])
       .andWhere(isMad ? 'enabled' : 'deleted', isMad)
 
+    if (webhookId) {
+      query.orWhere(isMad ? 'gym_id' : 'id', webhookId)
+    }
     const raidBosses = new Set()
     const raidForms = new Set()
     const teams = []

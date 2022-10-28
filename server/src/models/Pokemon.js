@@ -82,8 +82,10 @@ module.exports = class Pokemon extends Model {
       onlyLinkGlobal,
       ts,
       onlyAreas = [],
+      id: webhookId,
     } = args.filters
     let queryPvp = false
+
     const safeTs = ts || Math.floor(Date.now() / 1000)
 
     // quick check to make sure no Pokemon are returned when none are enabled for users with only Pokemon perms
@@ -203,16 +205,16 @@ module.exports = class Pokemon extends Model {
     const globalCheck = (pkmn) =>
       onlyLinkGlobal ? args.filters[`${pkmn.pokemon_id}-${pkmn.form}`] : true
     // query builder
-    const query = this.query()
+    const query = this.query().where(
+      isMad ? 'disappear_time' : 'expire_timestamp',
+      '>=',
+      isMad ? this.knex().fn.now() : safeTs,
+    )
+
     if (isMad) {
       getMadSql(query)
     }
     query
-      .where(
-        isMad ? 'disappear_time' : 'expire_timestamp',
-        '>=',
-        isMad ? this.knex().fn.now() : safeTs,
-      )
       .andWhereBetween(isMad ? 'pokemon.latitude' : 'lat', [
         args.minLat,
         args.maxLat,
@@ -222,6 +224,10 @@ module.exports = class Pokemon extends Model {
         args.maxLon,
       ])
       .andWhere((ivOr) => {
+        if (webhookId) {
+          console.log({ webhookId })
+          ivOr.orWhere(isMad ? 'encounter_id' : 'id', webhookId)
+        }
         for (const [pkmn, filter] of Object.entries(args.filters)) {
           if (pkmn.includes('-')) {
             const relevantFilters = getRelevantKeys(filter)
@@ -261,7 +267,6 @@ module.exports = class Pokemon extends Model {
     if (!getAreaSql(query, areaRestrictions, onlyAreas, isMad, 'pokemon')) {
       return []
     }
-
     const results = await query.limit(queryLimits.pokemon)
     const finalResults = []
     const pvpResults = []
@@ -292,13 +297,13 @@ module.exports = class Pokemon extends Model {
         listOfIds.push(pkmn.id)
         pvpResults.push(pkmn)
       }
-      if (noPvp && globalCheck(pkmn)) {
+      if (noPvp && (pkmn.id === webhookId || globalCheck(pkmn))) {
         finalResults.push(pkmn)
       }
     })
 
     // second query for pvp
-    if (queryPvp && (!isMad || reactMapHandlesPvp)) {
+    if (queryPvp && !webhookId && (!isMad || reactMapHandlesPvp)) {
       const pvpQuery = this.query()
       if (isMad) {
         getMadSql(pvpQuery)

@@ -33,9 +33,13 @@ module.exports = class Nest extends Model {
       .whereBetween('lat', [minLat, maxLat])
       .andWhereBetween('lon', [minLon, maxLon])
       .whereIn('pokemon_id', pokemon)
+    if (filters.id) {
+      query.orWhere('nest_id', filters.id)
+    }
     if (!avgFilter.every((x, i) => x === filters.onlyAvgFilter[i])) {
       query.andWhereBetween('pokemon_avg', filters.onlyAvgFilter)
     }
+
     if (!getAreaSql(query, areaRestrictions, filters.onlyAreas || [])) {
       return []
     }

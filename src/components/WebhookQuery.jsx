@@ -21,6 +21,7 @@ export default function WebhookQuery({
   if (lowercase === 'raids') {
     lowercase = 'gyms'
   }
+
   const { data } = useQuery(Query[lowercase]('id'), {
     variables: {
       id: params.id,
@@ -35,7 +36,7 @@ export default function WebhookQuery({
           : location
       }
       zoom={params.zoom || zoom}
-      params={params}
+      params={{ ...params, generalCategory: lowercase }}
       serverSettings={serverSettings}
     />
   ) : null
